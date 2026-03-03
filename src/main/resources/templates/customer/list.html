@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customers</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-white border-bottom">
+  <div class="container-fluid main-shell py-2">
+    <a class="navbar-brand" href="/customers">Customers</a>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary touch-btn" href="/me/blog">My Blog</a>
+      <a class="btn btn-outline-secondary touch-btn" href="/mail/logs">Mail Logs</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-shell">
+  <div class="d-flex flex-wrap gap-2 justify-content-between mb-3">
+    <form class="d-flex gap-2" method="get" action="/customers">
+      <input class="form-control" name="keyword" th:value="${keyword}" placeholder="Search name/phone/email">
+      <button class="btn btn-outline-secondary touch-btn" type="submit">Search</button>
+    </form>
+    <a class="btn btn-primary touch-btn" href="/customers/new">+ New Customer</a>
+  </div>
+
+  <div class="grid-cards">
+    <div class="card card-soft p-3" th:each="c : ${customers}">
+      <h2 class="h6" th:text="${c.name}">name</h2>
+      <div><small>Email:</small> <span th:text="${c.email}">email</span></div>
+      <div><small>Phone:</small> <span th:text="${c.phone}">phone</span></div>
+      <div><small>Birthday:</small> <span th:text="${c.birthday}">birthday</span></div>
+      <div class="d-flex gap-2 mt-2">
+        <a class="btn btn-sm btn-outline-primary touch-btn" th:href="@{|/customers/${c.id}/edit|}">Edit</a>
+        <form th:action="@{|/customers/${c.id}/delete|}" method="post">
+          <button class="btn btn-sm btn-outline-danger touch-btn" type="submit">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

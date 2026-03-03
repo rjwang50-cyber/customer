@@ -1,0 +1,65 @@
+﻿body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(180deg, #f3f8ff 0%, #ffffff 40%);
+  color: #15263b;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.main-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.card-soft {
+  border: 1px solid #e6eef8;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(40, 65, 96, 0.06);
+}
+
+.touch-btn {
+  min-height: 44px;
+}
+
+.grid-cards {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.form-control, .form-select {
+  min-height: 44px;
+}
+
+.mobile-sticky {
+  position: sticky;
+  bottom: 8px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 1025px) {
+  .mobile-sticky {
+    position: static;
+    background: transparent;
+    padding: 0;
+  }
+}

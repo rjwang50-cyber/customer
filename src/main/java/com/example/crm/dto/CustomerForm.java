@@ -7,6 +7,8 @@ import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class CustomerForm {
@@ -26,7 +28,8 @@ public class CustomerForm {
 
     private String hobbies;
     private String notes;
+    private String preferredLanguage = "en";
 
-    private String socialPlatform;
-    private String socialAccount;
+    private List<String> socialPlatforms = new ArrayList<>();
+    private List<String> socialAccounts = new ArrayList<>();
 }

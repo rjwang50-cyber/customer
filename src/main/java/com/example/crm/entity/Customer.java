@@ -17,6 +17,7 @@ public class Customer {
     private String phone;
     private String email;
     private LocalDate birthday;
+    private String preferredLanguage;
     private String hobbies;
     private String notes;
     private Long createdBy;

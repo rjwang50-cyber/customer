@@ -10,6 +10,7 @@ import com.example.crm.service.GreetingMailService;
 import com.example.crm.service.HolidayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -30,6 +32,7 @@ public class GreetingMailServiceImpl implements GreetingMailService {
     private final HolidayService holidayService;
     private final MailSendLogMapper mailSendLogMapper;
     private final JavaMailSender mailSender;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -37,7 +40,7 @@ public class GreetingMailServiceImpl implements GreetingMailService {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Singapore"));
         List<Customer> birthdayCustomers = customerService.findBirthdayCustomers(today);
         for (Customer customer : birthdayCustomers) {
-            sendWithLog(customer, "birthday", "BIRTHDAY", today, "Happy Birthday, " + customer.getName());
+            sendWithLog(customer, "birthday", "BIRTHDAY", today, null);
         }
 
         List<SgHolidayCalendar> holidays = holidayService.findByDate(today);
@@ -49,13 +52,12 @@ public class GreetingMailServiceImpl implements GreetingMailService {
                 .toList();
         for (SgHolidayCalendar holiday : holidays) {
             for (Customer customer : allCustomers) {
-                sendWithLog(customer, "festival", holiday.getHolidayCode(), today,
-                        "Greetings for " + holiday.getHolidayName() + ", " + customer.getName());
+                sendWithLog(customer, "festival", holiday.getHolidayCode(), today, holiday.getHolidayName());
             }
         }
     }
 
-    private void sendWithLog(Customer customer, String sendType, String holidayCode, LocalDate targetDate, String subject) {
+    private void sendWithLog(Customer customer, String sendType, String holidayCode, LocalDate targetDate, String holidayName) {
         Long count = mailSendLogMapper.selectCount(new LambdaQueryWrapper<MailSendLog>()
                 .eq(MailSendLog::getCustomerId, customer.getId())
                 .eq(MailSendLog::getSendType, sendType)
@@ -71,6 +73,9 @@ public class GreetingMailServiceImpl implements GreetingMailService {
         logEntity.setHolidayCode(holidayCode);
         logEntity.setTargetDate(targetDate);
         logEntity.setToEmail(customer.getEmail());
+        Locale locale = resolveLocale(customer.getPreferredLanguage());
+        String subject = buildSubject(customer, sendType, holidayName, locale);
+        String body = buildBody(customer, sendType, holidayName, locale);
         logEntity.setSubject(subject);
         logEntity.setRetryCount(0);
         logEntity.setCreatedAt(LocalDateTime.now());
@@ -81,7 +86,7 @@ public class GreetingMailServiceImpl implements GreetingMailService {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(customer.getEmail());
                 message.setSubject(subject);
-                message.setText("Dear " + customer.getName() + ",\n\nWishing you joy and success.\n\nBest regards,\nCustomer Care Team");
+                message.setText(body);
                 mailSender.send(message);
                 logEntity.setStatus("success");
                 logEntity.setSentAt(LocalDateTime.now());
@@ -99,5 +104,29 @@ public class GreetingMailServiceImpl implements GreetingMailService {
                 }
             }
         }
+    }
+
+    private String buildSubject(Customer customer, String sendType, String holidayName, Locale locale) {
+        if ("birthday".equals(sendType)) {
+            return messageSource.getMessage("mail.subject.birthday", new Object[]{customer.getName()}, locale);
+        }
+        return messageSource.getMessage("mail.subject.festival",
+                new Object[]{holidayName == null ? "" : holidayName, customer.getName()}, locale);
+    }
+
+    private String buildBody(Customer customer, String sendType, String holidayName, Locale locale) {
+        String key = "birthday".equals(sendType) ? "mail.body.birthday" : "mail.body.festival";
+        return messageSource.getMessage(key,
+                new Object[]{customer.getName(), holidayName == null ? "" : holidayName}, locale);
+    }
+
+    private Locale resolveLocale(String preferredLanguage) {
+        if (!StringUtils.hasText(preferredLanguage)) {
+            return Locale.ENGLISH;
+        }
+        return switch (preferredLanguage.trim().toLowerCase()) {
+            case "zh", "zh-cn", "zh-hans" -> Locale.SIMPLIFIED_CHINESE;
+            default -> Locale.ENGLISH;
+        };
     }
 }

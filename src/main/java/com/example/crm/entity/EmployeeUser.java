@@ -15,6 +15,7 @@ public class EmployeeUser {
     private String username;
     private String passwordHash;
     private String displayName;
+    private String roleCodes;
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -32,12 +32,30 @@
           <input class="form-control" type="date" th:field="*{birthday}">
         </div>
         <div class="col-12 col-md-6">
-          <label class="form-label">Social Platform</label>
-          <input class="form-control" th:field="*{socialPlatform}" placeholder="wechat/linkedin/...">
+          <label class="form-label">Preferred Language</label>
+          <select class="form-select" th:field="*{preferredLanguage}">
+            <option value="en">English</option>
+            <option value="zh">Chinese</option>
+          </select>
         </div>
-        <div class="col-12 col-md-6">
-          <label class="form-label">Social Account</label>
-          <input class="form-control" th:field="*{socialAccount}">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-0">Social Accounts</label>
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="addSocialBtn">+ Add</button>
+          </div>
+          <div id="socialRows" class="mt-2 d-flex flex-column gap-2">
+            <div class="row g-2 social-row" th:each="platform,iter : *{socialPlatforms}">
+              <div class="col-12 col-md-5">
+                <input class="form-control" name="socialPlatforms" placeholder="Platform (wechat/linkedin/...)" th:value="${platform}">
+              </div>
+              <div class="col-12 col-md-5">
+                <input class="form-control" name="socialAccounts" placeholder="Account" th:value="${customerForm.socialAccounts[iter.index]}">
+              </div>
+              <div class="col-12 col-md-2">
+                <button class="btn btn-outline-danger w-100 remove-social" type="button">Remove</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="col-12">
           <label class="form-label">Hobbies</label>
@@ -54,5 +72,28 @@
     </form>
   </div>
 </div>
+<script>
+  const socialRows = document.getElementById('socialRows');
+  document.getElementById('addSocialBtn').addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'row g-2 social-row';
+    row.innerHTML = `
+      <div class="col-12 col-md-5">
+        <input class="form-control" name="socialPlatforms" placeholder="Platform (wechat/linkedin/...)">
+      </div>
+      <div class="col-12 col-md-5">
+        <input class="form-control" name="socialAccounts" placeholder="Account">
+      </div>
+      <div class="col-12 col-md-2">
+        <button class="btn btn-outline-danger w-100 remove-social" type="button">Remove</button>
+      </div>`;
+    socialRows.appendChild(row);
+  });
+  socialRows.addEventListener('click', (event) => {
+    if (!event.target.classList.contains('remove-social')) return;
+    const row = event.target.closest('.social-row');
+    if (row) row.remove();
+  });
+</script>
 </body>
 </html>

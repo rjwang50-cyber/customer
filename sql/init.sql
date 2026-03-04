@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS employee_user (
     username VARCHAR(64) NOT NULL UNIQUE,
     password_hash VARCHAR(120) NOT NULL,
     display_name VARCHAR(100) NOT NULL,
+    role_codes VARCHAR(200) NOT NULL DEFAULT 'ADMIN,SALES,MARKETING,OPS',
     status TINYINT NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
@@ -17,6 +18,7 @@ CREATE TABLE IF NOT EXISTS customer (
     phone VARCHAR(30),
     email VARCHAR(120),
     birthday DATE,
+    preferred_language VARCHAR(10) NOT NULL DEFAULT 'en',
     hobbies VARCHAR(255),
     notes TEXT,
     created_by BIGINT,
@@ -75,9 +77,12 @@ CREATE TABLE IF NOT EXISTS mail_send_log (
     UNIQUE KEY uk_dedupe (customer_id, send_type, holiday_code, target_date)
 );
 
-INSERT INTO employee_user(username, password_hash, display_name, status, created_at, updated_at)
-VALUES ('admin', '$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6M7qDpiRnbV0w8AV/QXp1S8Maqk7a', 'Admin', 1, NOW(), NOW())
-ON DUPLICATE KEY UPDATE updated_at = NOW();
+ALTER TABLE employee_user ADD COLUMN IF NOT EXISTS role_codes VARCHAR(200) NOT NULL DEFAULT 'ADMIN,SALES,MARKETING,OPS';
+ALTER TABLE customer ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10) NOT NULL DEFAULT 'en';
+
+INSERT INTO employee_user(username, password_hash, display_name, role_codes, status, created_at, updated_at)
+VALUES ('admin', '$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6M7qDpiRnbV0w8AV/QXp1S8Maqk7a', 'Admin', 'ADMIN,SALES,MARKETING,OPS', 1, NOW(), NOW())
+ON DUPLICATE KEY UPDATE role_codes = VALUES(role_codes), updated_at = NOW();
 
 -- Singapore holidays sample for 2026 (maintain yearly)
 INSERT IGNORE INTO sg_holiday_calendar(holiday_date, holiday_code, holiday_name, `year`, is_observed) VALUES

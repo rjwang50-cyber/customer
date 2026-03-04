@@ -8,6 +8,9 @@
     cache: false
   jackson:
     time-zone: Asia/Singapore
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
   mail:
     host: smtp.example.com
     port: 587

@@ -1,6 +1,8 @@
 package com.example.crm.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.crm.dto.CustomerForm;
 import com.example.crm.entity.Customer;
 import com.example.crm.entity.CustomerSocialAccount;
@@ -14,6 +16,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,15 +27,13 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerSocialAccountMapper socialAccountMapper;
 
     @Override
+    public IPage<Customer> page(String keyword, long pageNo, long pageSize) {
+        return customerMapper.selectPage(new Page<>(pageNo, pageSize), buildSearchWrapper(keyword));
+    }
+
+    @Override
     public List<Customer> list(String keyword) {
-        LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<Customer>()
-                .orderByDesc(Customer::getUpdatedAt);
-        if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(Customer::getName, keyword)
-                    .or().like(Customer::getPhone, keyword)
-                    .or().like(Customer::getEmail, keyword));
-        }
-        return customerMapper.selectList(wrapper);
+        return customerMapper.selectList(buildSearchWrapper(keyword));
     }
 
     @Override
@@ -41,8 +42,15 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public List<CustomerSocialAccount> listSocialAccounts(Long customerId) {
+        return socialAccountMapper.selectList(new LambdaQueryWrapper<CustomerSocialAccount>()
+                .eq(CustomerSocialAccount::getCustomerId, customerId)
+                .orderByAsc(CustomerSocialAccount::getId));
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
-    public void save(CustomerForm form, Long employeeId) {
+    public Long save(CustomerForm form, Long employeeId) {
         LocalDateTime now = LocalDateTime.now();
         Customer customer;
         if (form.getId() == null) {
@@ -59,6 +67,7 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setPhone(form.getPhone());
         customer.setEmail(form.getEmail());
         customer.setBirthday(form.getBirthday());
+        customer.setPreferredLanguage(normalizeLanguage(form.getPreferredLanguage()));
         customer.setHobbies(form.getHobbies());
         customer.setNotes(form.getNotes());
         customer.setUpdatedAt(now);
@@ -67,18 +76,10 @@ public class CustomerServiceImpl implements CustomerService {
             customerMapper.insert(customer);
         } else {
             customerMapper.updateById(customer);
-            socialAccountMapper.delete(new LambdaQueryWrapper<CustomerSocialAccount>()
-                    .eq(CustomerSocialAccount::getCustomerId, customer.getId()));
         }
 
-        if (StringUtils.hasText(form.getSocialPlatform()) && StringUtils.hasText(form.getSocialAccount())) {
-            CustomerSocialAccount account = new CustomerSocialAccount();
-            account.setCustomerId(customer.getId());
-            account.setPlatform(form.getSocialPlatform().trim());
-            account.setAccount(form.getSocialAccount().trim());
-            account.setCreatedAt(now);
-            socialAccountMapper.insert(account);
-        }
+        replaceSocialAccounts(customer.getId(), form.getSocialPlatforms(), form.getSocialAccounts(), now);
+        return customer.getId();
     }
 
     @Override
@@ -97,5 +98,49 @@ public class CustomerServiceImpl implements CustomerService {
                 .filter(c -> c.getBirthday().getMonthValue() == dateInSingapore.getMonthValue())
                 .filter(c -> c.getBirthday().getDayOfMonth() == dateInSingapore.getDayOfMonth())
                 .toList();
+    }
+
+    private void replaceSocialAccounts(Long customerId, List<String> platforms, List<String> accounts, LocalDateTime now) {
+        socialAccountMapper.delete(new LambdaQueryWrapper<CustomerSocialAccount>()
+                .eq(CustomerSocialAccount::getCustomerId, customerId));
+
+        List<String> safePlatforms = platforms == null ? new ArrayList<>() : platforms;
+        List<String> safeAccounts = accounts == null ? new ArrayList<>() : accounts;
+        int max = Math.max(safePlatforms.size(), safeAccounts.size());
+        for (int i = 0; i < max; i++) {
+            String platform = i < safePlatforms.size() ? safePlatforms.get(i) : null;
+            String account = i < safeAccounts.size() ? safeAccounts.get(i) : null;
+            if (!StringUtils.hasText(platform) || !StringUtils.hasText(account)) {
+                continue;
+            }
+            CustomerSocialAccount entity = new CustomerSocialAccount();
+            entity.setCustomerId(customerId);
+            entity.setPlatform(platform.trim());
+            entity.setAccount(account.trim());
+            entity.setCreatedAt(now);
+            socialAccountMapper.insert(entity);
+        }
+    }
+
+    private String normalizeLanguage(String preferredLanguage) {
+        if (!StringUtils.hasText(preferredLanguage)) {
+            return "en";
+        }
+        String value = preferredLanguage.trim().toLowerCase();
+        return switch (value) {
+            case "zh", "zh-cn", "zh-hans" -> "zh";
+            default -> "en";
+        };
+    }
+
+    private LambdaQueryWrapper<Customer> buildSearchWrapper(String keyword) {
+        LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<Customer>()
+                .orderByDesc(Customer::getUpdatedAt);
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Customer::getName, keyword)
+                    .or().like(Customer::getPhone, keyword)
+                    .or().like(Customer::getEmail, keyword));
+        }
+        return wrapper;
     }
 }

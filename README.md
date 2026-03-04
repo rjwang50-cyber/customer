@@ -3,11 +3,14 @@
 Spring Boot 3 + MyBatis-Plus customer CRM with Singapore holiday greeting mail and employee blog homepage.
 
 ## Features
-- Employee login (default redirect to `/me/blog`)
-- Customer management (name, phone, email, birthday, hobbies, social account)
+- Employee login (role-based redirect to `/me/blog` / `/customers` / `/mail/logs`)
+- Customer management (name, phone, email, birthday, hobbies, preferred language, multiple social accounts)
 - Daily greeting scheduler at `09:00 Asia/Singapore`
-- Singapore holiday + birthday mail sending with dedupe log
+- Singapore holiday + birthday mail sending with dedupe log and i18n mail templates (EN/ZH)
 - Public blog page and employee personal blog management page
+- REST API for customer/blog/mail modules
+- Server-side pagination for customer/blog/mail lists
+- Role-based permissions (`ADMIN`, `SALES`, `MARKETING`, `OPS`)
 - Mobile + Pad responsive pages
 
 ## Stack
@@ -37,6 +40,10 @@ Spring Boot 3 + MyBatis-Plus customer CRM with Singapore holiday greeting mail a
 - `/customers` customer CRUD
 - `/mail/logs` mail logs and manual trigger
 - `/blog` public blog
+- `/api/customers` customer REST API
+- `/api/blog/posts` public blog REST API
+- `/api/me/blog/posts` employee blog REST API
+- `/api/mail/logs` mail log REST API
 
 ## Notes
 - All business date calculation uses `Asia/Singapore`.

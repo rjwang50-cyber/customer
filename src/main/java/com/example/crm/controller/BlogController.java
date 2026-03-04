@@ -1,5 +1,6 @@
 package com.example.crm.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.crm.dto.BlogPostForm;
 import com.example.crm.entity.BlogPost;
 import com.example.crm.service.BlogService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,8 +25,16 @@ public class BlogController {
     private final UserContextService userContextService;
 
     @GetMapping("/blog")
-    public String publicBlogList(Model model) {
-        model.addAttribute("posts", blogService.publicPosts());
+    public String publicBlogList(@RequestParam(defaultValue = "1") long page,
+                                 @RequestParam(defaultValue = "9") long size,
+                                 Model model) {
+        IPage<BlogPost> postPage = blogService.publicPostsPage(page, size);
+        model.addAttribute("posts", postPage.getRecords());
+        model.addAttribute("currentPage", postPage.getCurrent());
+        model.addAttribute("totalPages", postPage.getPages());
+        model.addAttribute("hasPrevious", postPage.getCurrent() > 1);
+        model.addAttribute("hasNext", postPage.getCurrent() < postPage.getPages());
+        model.addAttribute("size", size);
         return "blog/public-list";
     }
 
@@ -36,9 +46,17 @@ public class BlogController {
     }
 
     @GetMapping("/me/blog")
-    public String myBlog(Model model) {
+    public String myBlog(@RequestParam(defaultValue = "1") long page,
+                         @RequestParam(defaultValue = "10") long size,
+                         Model model) {
         Long employeeId = userContextService.currentEmployeeId();
-        model.addAttribute("posts", blogService.postsByEmployee(employeeId));
+        IPage<BlogPost> postPage = blogService.postsByEmployeePage(employeeId, page, size);
+        model.addAttribute("posts", postPage.getRecords());
+        model.addAttribute("currentPage", postPage.getCurrent());
+        model.addAttribute("totalPages", postPage.getPages());
+        model.addAttribute("hasPrevious", postPage.getCurrent() > 1);
+        model.addAttribute("hasNext", postPage.getCurrent() < postPage.getPages());
+        model.addAttribute("size", size);
         model.addAttribute("blogForm", new BlogPostForm());
         return "blog/me-blog";
     }
@@ -46,7 +64,13 @@ public class BlogController {
     @PostMapping("/me/blog")
     public String saveMyPost(@Valid BlogPostForm blogPostForm, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("posts", blogService.postsByEmployee(userContextService.currentEmployeeId()));
+            IPage<BlogPost> postPage = blogService.postsByEmployeePage(userContextService.currentEmployeeId(), 1, 10);
+            model.addAttribute("posts", postPage.getRecords());
+            model.addAttribute("currentPage", postPage.getCurrent());
+            model.addAttribute("totalPages", postPage.getPages());
+            model.addAttribute("hasPrevious", false);
+            model.addAttribute("hasNext", postPage.getCurrent() < postPage.getPages());
+            model.addAttribute("size", 10);
             return "blog/me-blog";
         }
         blogService.saveDraft(blogPostForm, userContextService.currentEmployeeId());

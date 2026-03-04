@@ -22,6 +22,7 @@
   <div class="d-flex flex-wrap gap-2 justify-content-between mb-3">
     <form class="d-flex gap-2" method="get" action="/customers">
       <input class="form-control" name="keyword" th:value="${keyword}" placeholder="Search name/phone/email">
+      <input type="hidden" name="size" th:value="${size}">
       <button class="btn btn-outline-secondary touch-btn" type="submit">Search</button>
     </form>
     <a class="btn btn-primary touch-btn" href="/customers/new">+ New Customer</a>
@@ -41,6 +42,22 @@
       </div>
     </div>
   </div>
+
+  <nav class="mt-3" th:if="${totalPages > 1}">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" th:classappend="${!hasPrevious} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/customers(keyword=${keyword},page=${currentPage - 1},size=${size})}">Previous</a>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link" th:text="|Page ${currentPage} / ${totalPages}|">Page 1 / 1</span>
+      </li>
+      <li class="page-item" th:classappend="${!hasNext} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/customers(keyword=${keyword},page=${currentPage + 1},size=${size})}">Next</a>
+      </li>
+    </ul>
+  </nav>
 </div>
 </body>
 </html>
